@@ -1,37 +1,43 @@
 // DEPENDENCIES
+const express = require("express");
 const path = require("path");
-const db = require("../db/db.json");
 const fs = require("fs");
+
 
 // MODULE EXPORTS FUNCTION FOR API FUNCTIONALITY 
 module.exports = function(app) {
-   x = 1;
+
+   const db = path.join(__dirname, "../db/db.json");
+
+   const dbRead = JSON.parse(fs.readFileSync(db,(err,data)=> {
+      if (err) throw err;
+   }));
+
+   const dbWrite = (dbRead) => {
+      fs.writeFileSync(path.join(__dirname, "../db/db.json"), JSON.stringify(dbRead), (err) => {
+         if (err) throw err;
+      });
+   }
+
+   let x = 1;
    
    app.post("/api/notes", function(req,res){
       let newNote = req.body;
-      newNote["id"] = i;
-      db.push(newNote);
-         
-         fs.appendFile(path.join(__dirname, '../db/db.json'), db, 'utf8', function(err){
-            if (err) throw err;
-            console.log('db.json updated!');
-         })
-         x++;
+      newNote.id = x;
+      x++;
+      dbRead.push(newNote);
+      dbWrite(dbRead);
+      return res.json(dbRead);
    })
 
 
    app.post("/api/delete/:id", function(req,res){
-      let deletedItem = req.params;
-      for (let i = 0; i < db.length; i++) {
-         if(db[i].id === deletedItem.id) {
-            db.splice(i,1);
-         };
-      }
-      let newDb = JSON.stringify(db);
-      fs.writeFile(path.join(__dirname, '../db/db.json'), newDb, 'utf8', function(err){
-         if (err) throw err;
-         console.log('Deleted Note');
+      let id = req.params.id;
+      delete dbRead[id-1];
+      let filtered = dbRead.filter(function(el){
+         return el != null;
       });
-      res.json(noteToDelete.Title)
+      dbWrite(filtered);
+      res.send(filtered);
    })
 }
